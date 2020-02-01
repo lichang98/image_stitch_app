@@ -5,6 +5,8 @@ import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
@@ -18,7 +20,8 @@ public class App extends JFrame {
     private JPanel panelCtrls;
     private JButton buttonSelect;
     private JButton buttonSave;
-    private JButton buttonRun;
+
+    private List<File> resultFiles;
 
     public App(String title) throws HeadlessException {
         super(title);
@@ -48,7 +51,37 @@ public class App extends JFrame {
                         System.out.println(f.getAbsolutePath());
                     }
                     // 拼接图片
-                    stitchImgs(files);
+                    resultFiles=stitchImgs(files);
+                }
+            }
+        });
+
+        buttonSave.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent actionEvent) {
+                System.out.println("选择保存文件夹");
+                JFileChooser jFileChooser = new JFileChooser(".");
+                jFileChooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
+                jFileChooser.showDialog(App.this,"选择保存文件夹");
+                File fileDir=jFileChooser.getSelectedFile();
+                System.out.println("选择的文件夹 "+fileDir);
+                if(fileDir.isDirectory()){
+                    if(resultFiles == null){
+                        JOptionPane.showMessageDialog(App.this,"请先选择图片",
+                                "警告",JOptionPane.WARNING_MESSAGE);
+                    }else{
+                        for(File file : resultFiles){
+                            String name= file.getName();
+                            try {
+                                Files.move(Paths.get(file.toString()),Paths.get(fileDir.toString(),name));
+                            } catch (IOException e) {
+                                e.printStackTrace();
+                            }
+                        }
+                    }
+                }else{
+                    JOptionPane.showMessageDialog(App.this,"请选择文件夹",
+                            "警告",JOptionPane.WARNING_MESSAGE);
                 }
             }
         });
@@ -59,7 +92,7 @@ public class App extends JFrame {
      *
      * @param files
      */
-    private void stitchImgs(File[] files) {
+    private List<File> stitchImgs(File[] files) {
         Stitch stitch = new Stitch();
         Path resRootPath = Paths.get(System.getProperty("user.dir"), "res");
         List<File> fileList = new ArrayList<>();
@@ -91,7 +124,7 @@ public class App extends JFrame {
                 }
             }
         } while (preSize != fileList.size() && fileList.size() > 1);
-
+        return  fileList;
     }
 
     private void init() {
@@ -112,11 +145,8 @@ public class App extends JFrame {
         buttonSelect.setBounds(40, 10, 120, 30);
         buttonSave = new JButton("保存拼接结果");
         buttonSave.setBounds(240, 10, 120, 30);
-        buttonRun = new JButton("运行拼接程序");
-        buttonRun.setBounds(440, 10, 120, 30);
         panelCtrls.add(buttonSelect);
         panelCtrls.add(buttonSave);
-        panelCtrls.add(buttonRun);
 
         getContentPane().setLayout(null);
         getContentPane().setBackground(Color.WHITE);
